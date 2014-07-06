@@ -1,0 +1,139 @@
+animals
+--
+10
+In low-level light conditions, the eyes of Tawny Owl are:
+50 times better than human eyes.
+100 times better than human eyes.<<
+200 times better than human eyes.
+300 times better than human eyes.
+--
+5
+Tawny owl usually nests in:
+Holes in trees.<<
+Holes in ridges.
+Nests on branches.
+Decrepit human structures.
+--
+7
+Tawny owl is a:
+Small-sized owl.
+Medium-sized owl.<<
+Large-sized owl.
+The smallest owl.
+--
+9
+Tawny owl has a wingspan of:
+55-62cm.
+62-72cm.
+81-96cm.<<
+96-105cm.
+--
+9
+The number of living bird species is:
+9,000-10,000<<
+4,000-5,000
+6,000-7,000
+about 4,500
+--
+7
+Birds are in class of:
+Aves<<
+Avia
+Vertebrate
+Oviparous
+--
+7
+The most diverse class of terrestrial vertebrate is:
+Birds<<
+mammals
+reptiles
+--
+3
+The earliest known avian is:
+Archaeopteryx<<
+Archon
+Aviaptericos
+--
+7
+Archaeopteryx, the first known bird, lived:
+155-150 million years ago<<
+130-120 million years ago
+115-100 million years ago
+90-95 million years ago
+--
+7
+Urvogel means:
+First bird<<
+Pronoun
+German type of vowel
+German umlaut
+--
+8
+Archaeopteryx, the first known bird, had the length of:
+1/2 meter<<
+3/4 meter
+slightly more than 1 meter
+1/4 meter
+--
+7
+Was Archaeopteryx, the first known bird, capable of flight:
+yes
+it could only glide
+it is not known<<
+--
+8
+Archaeopteryx, the first known bird, was best specialized for:
+perching on trees
+running on the ground
+neither<<
+--
+8
+The first Archaeopteryx (first known bird), was discovered in:
+1855<<
+1799
+1825
+1900
+--
+6
+Magpie is:
+a bird<<
+a rare Welsh treat
+an evergreen shrub
+--
+7
+Magpie (bird) is:
+generally associated with unhappiness and trouble<<
+a symbol of hope
+generally thought to be vindictive
+--
+8
+In Scottish folklore, magpies were reviled for:
+Carrying a drop of satan's blood under their tongues<<
+Bringing death to a family when perching right next to the house
+Connection to witchcraft
+Bad omens
+--
+8
+The folklore says that in order to allay bad luck when meeting magpies, one should:
+Greet them with "How is your wife?"<<
+Toss a few leaves their way
+Not to look them straight in the eyes
+--
+8
+According to folklore, in order to allay bad luck when meeting magpies, one should:
+Say, "Good Morning (Evening) Sir"<<
+Smile at them and then look away quickly
+Look straight at them and not let them out of sight until they fly away
+--
+8
+According to folklore, in order to allay bad luck when meeting a single magpie, one should:
+Repeat words "I defy thee" seven times<<
+Say "Fare thee well"
+Look at the bird sideways
+--
+8
+According to folklore, in order to allay bad luck when meeting a single magpie, one should:
+Pinch the person they are walking with<<
+Try to avoid the bird noticing you
+Avoid showing that you saw the bird
+--

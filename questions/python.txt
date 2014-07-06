@@ -1,0 +1,108 @@
+python
+--
+2
+In Python 3.x, does division using '/' operator return an integer or a float?
+a float<<
+an integer
+--
+1
+What does the '%' operator do?
+calculates the remainder of division<<
+calculates the imaginary part of number
+calculates floored division and remainder pair
+--
+1
+What does the '**' operator do?
+raise to Nth power<<
+multiply two sequences in item-wise fashion
+multiply two numbers and round() the result
+--
+1
+If you use an undefined variable:
+you will get a NameError<<
+you will get an 'undefined' exception
+the variable will have an 'undefined' value
+--
+2
+In interactive mode, the last printed expression is assigned to the variable:
+_<<
+__
+#
+$
+--
+2
+Does the round() function:
+accepts optional ndigits arg<<
+requires ndigits arg
+--
+2
+Does the round() ndigits arg:
+defaults to 0<<
+defaults to 1
+--
+2
+To indicate a raw string:
+add 'r' before the first quote character<<
+use raw() builtin to wrap the string
+use triple quotes
+--
+2
+To prevent end-of-line from being included in a triple-quoted string:
+add a backslash '\' at the end of line<<
+use textwrap.dedent()
+--
+2
+To repeat a string:
+use '*' operator<<
+use repeat() builtin
+use str.concat() method
+--
+2
+When two string literals are next to each other:
+they will be concatenated<<
+a NameError exception is raised
+a SyntaxError exception is raised
+--
+2
+To access second-to-last character in a string:
+use mystr[-2]<<
+use mystr[-1]
+use mystr[-0]
+--
+1
+To access first character in a string:
+use mystr[0]<<
+use mystr[1]
+use mystr.first()
+--
+3
+Out of range slice index:
+will return items up the the last item<<
+will raise an IndexError
+--
+3
+To terminate output printed with print() with a terminator other than newline:
+use 'end' argument<<
+use 'term' argument
+use 'endval' argument
+use 'sep' argument
+--
+3
+print() accepts:
+arbitrary number of positional arguments<<
+a single positional argument
+up to 10 positional arguments
+--
+2
+You can do multiple assignment by separating variable names (and values):
+with commas<<
+with semicolons
+with colons
+--
+3
+You can use the len() builtin on:
+objects that have __len__() method<<
+objects that have __length__() method
+strings
+lists
+strings and lists
