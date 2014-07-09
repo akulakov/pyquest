@@ -159,9 +159,10 @@ class Being:
         field.question = question
         rval           = field.ask()
 
-        if rval:
+        if rval is True:
             # nothing for now, later give money or a random artifact
-            field.text.append(("%s is content with the answer." % self.kind, 3))
+            # field.text.append(("%s is content with the answer." % self.kind, 3))
+            field.text.append("%s is content with the answer." % self.kind)
             self.hostile = False
             # self.remove()
         else:
@@ -171,7 +172,8 @@ class Being:
                 hit = h - 2
             being.health -= hit
             tpl = "%s's curiosity unsatisfied, he slaps hero with a textbook for %s HP"
-            field.text.append( (tpl % (self.kind, hit), 5) )
+            field.text.append(tpl % (self.kind, hit))
+            # field.text.append( (tpl % (self.kind, hit), 5) )
         self.asked = True
 
     def find_closest_monster(self):

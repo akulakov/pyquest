@@ -36,6 +36,7 @@ __version__ = "0.1b"
 lose_msg    = "\nYou Die."
 win_msg     = "\nYou Win."
 test        = False
+ask_chance  = .95      # checked against random() call
 
 # translation of curses key codes to key values
 keymap = {
@@ -288,7 +289,7 @@ class PyQuest:
                         # live monster
                         monster = move_res
                         # cur_being.attack(monster)
-                        if conf.mode == "strategical" and random.random() > .75 and not monster.asked:
+                        if conf.mode == "strategical" and random.random() < ask_chance and not monster.asked:
                             monster.ask(cur_being)
                         else:
                             cur_being.attack(monster)

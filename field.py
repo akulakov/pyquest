@@ -115,19 +115,22 @@ class Field:
             for i in range(len(q)):
                 win.addstr(i, 0, q[i])
             ans = win.getch()
+            # TODO why is 'ans' an int??
+            # print('ans', repr(ans))
             del win
             self.scr.touchwin()     # to paint over deleted window
             self.scr.refresh()
-            ans = int(ans) if ans.isdigit() else None
+            # ans = int(ans) if ans.isdigit() else None
 
             self.log("ans: %s, right_ans: %s" % (ans, self.question[1]))
-            self.question = []
 
             # TODO: should not return right ans
             if ans-48 == self.question[1]:
+                self.question = []
                 return True
             else:
                 right_ans = self.question[2]
+                self.question = []
                 return right_ans
 
     def msg(self):
@@ -261,7 +264,7 @@ class Field:
                 # do not show vertice, vertice would only be on top if cell is empty
                 if item.kind == "vertice":
                     item = Item("empty")
-            log('drawing at', loc.y-1, loc.x-1)
+            # log('drawing at', loc.y-1, loc.x-1)
             self.scr.addstr(loc.y-1, loc.x-1, str(item), curses.color_pair(item.color))
         self.display()
 
