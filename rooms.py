@@ -77,6 +77,12 @@ from utils import first
 updir, downdir, rgtdir, leftdir = (0,-1), (0,1), (1,0), (-1,0)
 # }}}
 
+def is_rock(fld, loc):
+    return fld[loc.y][loc.x] == '.'
+
+def invalid(fld, y, x):
+    return y<0 or x<0 or y>=len(fld) or x>=len(fld[0])
+
 class Limit:
     def __init__(self, x_axis, y_axis, level):
         self.x1, self.x2 = x_axis
@@ -230,90 +236,78 @@ class Rooms:
         l1, l2 = r1.center(), r2.center()
         return math.sqrt( abs(l2.x - l1.x)**2 + abs(l2.y - l1.y)**2  )
 
-    def closest(self, room, rooms):
+    # unused
+    def Xclosest(self, room, rooms):
         dist = lambda _room: self.dist(room, _room)
         return first(sorted(rooms, key=dist))
 
-    def make_corridors(self, fld):
-        self.fld = fld
-        # connected = [self.rooms[0]]
-        room = self.rooms[0]
-        rooms = self.rooms[1:]
-        print("room", room)
-        # print("rooms", rooms)
-        while rooms:
-            room2 = self.closest(room, rooms)
-            to_remove = room2
-            print("closest: room2", room2)
+    def closest(self, lst1, lst2):
+        dist_list = []
+        for r in lst1:
+            for r2 in lst2:
+                dist_list.append( (self.dist(r,r2), r, r2) )
+        close = first(sorted(dist_list))
+        return close[1], close[2]
 
-            room, room2 = sorted([room, room2])
-            x_rng, y_rng = room.range_intersect(room2)
-            print("x_rng,y_rng", x_rng,y_rng)
+    def make_corridors(self, fld):
+        """Make corridors (currently about 80% successful, if not, level is rebuilt)."""
+        self.fld  = fld
+        connected = self.rooms[:1]
+        rooms     = self.rooms[1:]      # not-connected
+        while rooms:
+            room, room2 = self.closest(connected, rooms)
+            # print("ids(connected)", ids(connected))
+            # print("ids(rooms)", ids(rooms))
+            # print("mk corridor from room %s to %s" % (room.id, room2.id))
+
+            uproom, lowroom = sorted([room, room2])     # upper, lower rooms (on screen)
+            x_rng, y_rng = uproom.range_intersect(lowroom)
 
             if x_rng:
                 x = randint(*x_rng)
-                # y = min(room.y2, room2.y2)
-                # print("x,y", x,y)
-                self.burrow( Loc(x, room.y2+1), [updir, downdir] )
+                self.burrow( Loc(x, uproom.y2+1), [updir, downdir] )
             elif y_rng:
-                x = min(room.x2, room2.x2)
+                x = min(uproom.x2, lowroom.x2)
                 y = randint(*y_rng)
-                print("y", y)
                 self.burrow( Loc(x+1, y), [leftdir, rgtdir] )
 
             else:
-                if room.x1 < room2.x1:
+                if uproom.x1 < lowroom.x1:
                     # room orientation:
                     # R
                     #  R2
                     dirs = leftdir, downdir
-                    # step = 1
-                    fin_x = room.x2+1
+                    fin_x = uproom.x2+1
                 else:
                     #    R
                     #  R2
                     dirs = rgtdir, downdir
-                    # room, room2 = room2, room
-                    # step = -1
-                    fin_x = room.x1-1
-                print("room.center()", room.center(), room)
-                print("room2.center()", room2.center(), room2)
+                    fin_x = uproom.x1-1
 
-                x_rng = room2.offset_ranges()[0]
-                y_rng = room.offset_ranges()[1]
-                print("x_rng,y_rng", x_rng,y_rng)
-                print("room.x2", room.x2)
-                x1 = max(room.x2+2, x_rng[0])
-                # x_rng = (x1, x_rng[1])
+                x_rng = lowroom.offset_ranges()[0]
+                y_rng = uproom.offset_ranges()[1]
+                x1 = max(uproom.x2+2, x_rng[0])
                 x = randint(*x_rng)
 
-                print("room2.y2", room2.y2)
-                y1 = max(room2.y2+2, y_rng[0])
-                # y_rng = (y_rng[1], y1)
+                y1 = max(lowroom.y2+2, y_rng[0])
                 y = randint(*y_rng)
                 start = Loc(x,y)
-                pts = self.burrow_points(start, dirs, fin_x, room2.y1-1)
-                for p in pts:
-                    if not is_rock(self.fld, p):
-                        print('not rock', p)
+                pts = self.burrow_points(start, dirs, fin_x, lowroom.y1-1)
+                # for p in pts:
+                #     if not is_rock(self.fld, p):
+                #         self.fld[p.y][p.x] = 'X'
                 if all(is_rock(self.fld, p) for p in pts):
                     self.burrow(start, dirs)
                 else:
-                    print("Error making the corridor")
+                    # print("Error making the corridor")
+                    return False
 
-            # if room2 in rooms:
-            print("rooms", rooms)
-            print("room2", room2)
-            rooms.remove(to_remove)
-            room = to_remove
-            # break
+            rooms.remove(room2)
+            connected.append(room2)
+        return True
 
-
-def is_rock(fld, loc):
-    return fld[loc.y][loc.x] == '.'
-
-def invalid(fld, y, x):
-    return y<0 or x<0 or y>=len(fld) or x>=len(fld[0])
+def ids(rooms):
+    return [r.id for r in rooms]
 
 class Room:
     def __init__(self, p1, p2, id=1):
@@ -418,44 +412,39 @@ def test():
     from copy import deepcopy
     from string import ascii_letters
 
+    ok = 0
     fld = []
     for _ in range(ym+1):
         fld.append( ['.'] * (xm+1) )
 
-    for _ in range(0):
+    for _ in range(100):
+        fld = []
+        for _ in range(ym+1):
+            fld.append( ['.'] * (xm+1) )
         r=Rooms()
         r.make_limits(lim)
         r.make_containers()
         r.make_rooms()
-        r.make_corridors(fld)
-        # print(len(r.containers))
-    # return
+        for room in r.rooms:
+            points = room.make_inside_points()
+            for y,x in points:
+                fld[y][x] = ' '
+        rval = r.make_corridors(fld)
+        ok += int(rval)
+    print("ok", ok)
+    return
 
     rooms = Rooms()
     rooms.make_limits(lim)
     rooms.make_containers()
     rooms.make_rooms()
-    # pprint(r.containers)
     for r in rooms.rooms:
         points = r.make_inside_points()
         for y,x in points:
             fld[y][x] = ' '
+        x, y = r.center()
+        fld[int(y)][int(x)] = str(r.id)
     rooms.make_corridors(fld)
-
-    f = fld
-    n = 0
-    for (x1,y1), (x2,y2) in rooms.containers:
-        # print("x1,y1", x1,y1)
-        # print("x2,y2", x2,y2)
-        # f = deepcopy(fld)
-
-        # f[y1][x1] = ascii_letters[n]
-        # f[y2][x2] = ascii_letters[n]
-        n+=1
-        # for row in f[1:]:
-        #     row = ''.join(row[1:])
-        #     print(row)
-        # if input('> ')=='q': break
 
     for row in fld[:]:
         row = ''.join(row[:])
