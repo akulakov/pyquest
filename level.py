@@ -43,14 +43,14 @@ class Level:
                 b = being.rand()
             else:
                 b = kind
-            log(b)
+            # log(b)
             m = being.Being(b, field.random(), self.last_index)
             self.last_index += 1
             m.place()
             m.team = 'monsters'
-            log(m.loc)
+            # log(m.loc)
             self.monsters.append(m)
-            log(self.monsters)
+            # log(self.monsters)
 
         # make items
         #field.set(field.random(), Item('down'))
@@ -69,7 +69,7 @@ class Level:
         if conf.mode == "tactical":
             return
 
-        log("populate(): levels.current=%d, conf.levels: %d \n" % (levels.current, conf.levels))
+        # log("populate(): levels.current=%d, conf.levels: %d \n" % (levels.current, conf.levels))
         down, up = None, None
         if levels.current == 1:
             down = field.random()

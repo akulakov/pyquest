@@ -133,8 +133,7 @@ class Being:
                     break
             level.populate()
         self.place(level.up)
-        field.full_display()
-
+        field.full_display(self)
 
     def up(self):
         """Go up the stairs."""
@@ -145,7 +144,7 @@ class Being:
         levels.list[cur] = field.fld, level.down, level.up
         cur -= 1
         field.fld, level.down, level.up = levels.list[cur]
-        field.full_display()
+        field.full_display(self)
 
     def ask(self, being):
         """Monster asks player some kind of question about science, etc."""
@@ -185,8 +184,8 @@ class Being:
         from level import level
         lst = []
         for being in level.monsters:
-            log(repr(self.loc))
-            log(being, repr(being.loc))
+            # log(repr(self.loc))
+            # log(being, repr(being.loc))
             if being.alive:
                 lst.append( (field.distance(self.loc, being.loc), being) )
         lst.sort(key=itemgetter(0))
@@ -233,9 +232,7 @@ class Being:
         if self.hostile:
             target = target or level.hero
             self.attack_hero_flag = True
-            log(10)
             path = self.fullpath(target.loc)
-            log(20)
             loc = first(path)
             if loc:
                 self.move_to(Loc(*loc))
@@ -260,12 +257,12 @@ class Being:
             if move_result in (1, 4):
                 # redraw cell where we just were
                 field.pop(self.loc)
-                field.redraw(self.loc)
+                # field.redraw(self.loc)
 
                 # paint us on a new cell
                 self.loc = loc
                 field.scr.move(loc.y-1, loc.x-1)    # ??
-                field.redraw(loc)
+                # field.redraw(loc)
 
                 # pick up items
                 items = field[loc]
@@ -298,7 +295,6 @@ class Being:
                 field.display()
         return move_result
 
-
     def fullpath(self, loc):
         """ Build shortest path using field.vertices if direct path is blocked.
 
@@ -330,14 +326,14 @@ class Being:
             level.attacking_monster = level.monsters.index(self)
             am_kind = self.kind
         if target.team == "monsters":
-            log("attack() - target: %s %s" % (target.kind, target))
-            log("attack() - level.monsters: %s" % str(level.monsters))
+            # log("attack() - target: %s %s" % (target.kind, target))
+            # log("attack() - level.monsters: %s" % str(level.monsters))
             level.attacking_monster = level.monsters.index(target)
             am_kind = target.kind
 
-        log("level.attacking_monster: %s" % level.attacking_monster)
+        # log("level.attacking_monster: %s" % level.attacking_monster)
         level.save_monsters = deepcopy(level.monsters)
-        log("level.save_monsters: %s" % level.save_monsters)
+        # log("level.save_monsters: %s" % level.save_monsters)
         cur = levels.current
         levels.list[cur] = field.fld, level.down, level.up
         field.load_map("local")
@@ -361,11 +357,11 @@ class Being:
                     break
             hero.place(rloc)
 
-        field.full_display()
+        field.full_display(self)
 
     def attack(self, target):
         """Attack target."""
-        log("attack(): self.kind, target.kind: %s, %s" % (self.kind, target.kind))
+        # log("attack(): self.kind, target.kind: %s, %s" % (self.kind, target.kind))
         if self.team == target.team:
             return
 
@@ -412,7 +408,7 @@ class Being:
 
     def move_program(self, count):
         """Create a program to move in given direction (count) times."""
-        log("- - in move_program()")
+        # log("- - in move_program()")
         field.status(count)
         c = field.scr.getch()
         if 48 <= c <= 57:
@@ -436,7 +432,7 @@ class Being:
         """Remove from field."""
         field.remove(self.loc, self)
         level.last_index += 1   # ???
-        field.redraw(self.loc)
+        # field.redraw(self.loc)
         if self in level.monsters:
             level.monsters.remove(self)
 
@@ -447,14 +443,14 @@ class Being:
         corpse = Item('corpse', level.last_index)
         level.last_index += 1
         field.set(self.loc, corpse)
-        field.redraw(self.loc)
+        # field.redraw(self.loc)
         if self in level.monsters:
             level.monsters.remove(self)
 
     def next_to(self, kind):
         """Am I close to an object of given type."""
         rc = field.next_to(self.loc, kind)
-        log("- next_to(): rc = %s" % rc)
+        # log("- next_to(): rc = %s" % rc)
         return rc
 
     def auto_combat(self):
@@ -504,12 +500,12 @@ class Being:
             of other team and target.
         """
 
-        log("--- in special_attack()")
+        # log("--- in special_attack()")
         if not self.kind == "mage":
             field.text.append("Only mage can perform special attacks.")
             return
         for name, a_dict in conf.special_attacks.items():
-            log("--- checking attack '%s'" % name)
+            # log("--- checking attack '%s'" % name)
             a_moves1 = a_dict["ally1"]
             a_moves2 = a_dict["ally2"]
             t_moves = a_dict["target"]
@@ -527,23 +523,23 @@ class Being:
 
             no = True
             for (am1, am2, tm) in rotations:
-                log("--- rotation: '%s'" % str((am1, am2, tm)))
+                # log("--- rotation: '%s'" % str((am1, am2, tm)))
 
                 for a_mv in (am1, am2):
-                    log("--- a_mv: '%s'" % str(a_mv))
+                    # log("--- a_mv: '%s'" % str(a_mv))
                     a_loc = field.get_loc(self.loc, a_mv)
-                    log("--- a_loc: '%s'" % str(a_loc))
+                    # log("--- a_loc: '%s'" % str(a_loc))
                     items = field[a_loc]
                     no = True
                     for i in items:
-                        log("--- w.kind: '%s'" % str(w.kind))
+                        # log("--- w.kind: '%s'" % str(w.kind))
                         if i.kind in ("hoplite", "fencer"):
                             no = False
                     if no:
-                        log("no!")
+                        # log("no!")
                         break
-                    else:
-                        log("pass!")
+                    # else:
+                        # log("pass!")
                 t_loc = field.get_loc(self.loc, tm)
                 items = field[t_loc]
                 no = True
@@ -556,22 +552,23 @@ class Being:
                                 no = False
                         elif name == "trap":
                             if "animal" in monster.specials:
-                                log("--- animal in monster.specials")
+                                # log("--- animal in monster.specials")
 
                                 no = False
                         else:
                             no = False
                 if no:
-                    log("target: no!")
+                    pass
+                    # log("target: no!")
                 else:
-                    log("target: pass!")
+                    # log("target: pass!")
                     break
 
             # this special attack can't be done now, let's continue checking other attacks
             if no:
                 continue
 
-            log("- special_attack(): name = %s" % name)
+            # log("- special_attack(): name = %s" % name)
 
             # we can perform this special attack!
             if name.startswith("arrow"):
@@ -601,3 +598,18 @@ class Being:
             self.defense_val += random.randint(1,3)
             self.attack_val += random.randint(1,3)
             field.text.append('%s advanced to level %d' % (self.kind, self.level))
+
+    def handle_program(self):
+        # log("- - cur being (%s) has a program.." % self.kind)
+        times, direction = self.program
+        ok = self.move(direction)
+        # program may have been reseted in being.move()
+        if self.program:
+            # log("- - cur being STILL has a program..")
+            times -= 1
+            if (not ok) or (times < 1):
+                # bumped into something or end of program
+                self.program = None
+                # log("- - resetting program because bumped into something?..")
+            else:
+                self.program = times, direction

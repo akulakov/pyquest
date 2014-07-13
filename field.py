@@ -18,7 +18,9 @@ from conf import *
 from utils import getitem
 from board import Loc
 from item import Item
+import los
 
+empty_item = Item("empty")
 
 class Field:
     """Map of current level."""
@@ -53,11 +55,11 @@ class Field:
         self.show_vertices = False                # only show vertices in map editor
 
         self.last_pause = time.time()
+        self.last_los_points = []                 # line of sight points from last update
 
         # init map
         self.clear_field()
-        # for x in range(conf.xmax+1):
-            # self.fld.append( [[]] * (conf.ymax+1) )
+        self.init_last_seen()
 
     def __getitem__(self, loc):
         x, y = loc
@@ -72,6 +74,24 @@ class Field:
             for y in range(conf.ymax):
                 yield Loc(x+1, y+1)
 
+    def get_last_seen(self, loc):
+        x, y = loc
+        return self.last_seen[x][y]
+
+    def set_last_seen(self, loc, item):
+        x, y = loc
+        self.last_seen[x][y] = item
+
+    def clear_field(self):
+        self.fld = []   # list of map locations
+        for x in range(conf.xmax+1):
+            self.fld.append( [[Item("empty")]] * (conf.ymax+1) )
+
+    def init_last_seen(self):
+        self.last_seen = []   # list of last seen items at locations
+        for x in range(conf.xmax+1):
+            self.last_seen.append( [Item("empty")] * (conf.ymax+1) )
+
     def valid(self, loc):
         return loc.x >= 1 and loc.y >= 1 and loc.x <= conf.xmax and loc.y <= conf.ymax
 
@@ -84,11 +104,6 @@ class Field:
         coords = (-1,0,1)
         locs = set((x+n, y+m) for n in coords for m in coords) - set( [(x,y)] )
         return [ Loc(*tup) for tup in locs if self.valid(Loc(*tup)) ]
-
-    def clear_field(self):
-        self.fld = []   # list of map locations
-        for x in range(conf.xmax+1):
-            self.fld.append( [[Item("empty")]] * (conf.ymax+1) )
 
     def wrap(self, lst, width):
         return [ l for line in lst for l in textwrap.wrap(line, width) ]
@@ -177,12 +192,10 @@ class Field:
 
     def load_map(self, name):
         """Load level map."""
-
-        s = shelve.open('maps')
+        s = shelve.open("maps")
         self.fld = s[name]
-
-        # make list of vertices
         return
+        # make list of vertices
         # self.vertices = []
         # for x in range(xmax+1):
         #     for y in range(ymax+1):
@@ -248,28 +261,57 @@ class Field:
     def blank(self):
         """Put empty instance in all cells."""
         self.clear_field()
-        # for x in range(conf.xmax+1):
-        #     for y in range(conf.ymax+1):
-        #         self[(x+1,y+1)] = [Item('empty')]
 
-    def full_display(self):
-        """Redraw all cells."""
-        for l in self:
-            log(l, self[l])
+    def full_display(self, beings=None, los=True):
+        """Redraw tiles at `points`, or all cells if points=None."""
+        log( "in full_display()")
+        # for l in self:
+            # log(l, self[l])
 
-        for loc in self:
-            item = getitem(self[loc], -1, Item("empty"))
+        los_points = list(self.los_update(beings))
+        points = los_points if los else iter(self)
 
-            if not self.show_vertices:
-                # do not show vertice, vertice would only be on top if cell is empty
-                if item.kind == "vertice":
-                    item = Item("empty")
-            # log('drawing at', loc.y-1, loc.x-1)
+        # we need to clear out beings that are no longer visible from being shown
+        for loc in self.last_los_points:
+            if loc not in los_points:
+                item = self.get_last_seen(loc)
+                # if item.kind!='empty':
+                    # log("clear, item, loc", item, loc)
+                if item.alive:
+                    self.set_last_seen(loc, empty_item)
+                    points.append(loc)
+
+        for loc in points:
+            item = self.get_last_seen(loc)
             self.scr.addstr(loc.y-1, loc.x-1, str(item), curses.color_pair(item.color))
-        self.display()
 
-    def display(self):
+        self.display(beings)
+        self.last_los_points = los_points
+
+    def los_update(self, beings):
+        """Update line-of-sight data."""
+        visible = set()
+        if beings and not isinstance(beings, list):
+            beings = [beings]
+
+        for being in (beings or []):
+            visible = los.los(being.loc, 6, self)
+            # log("visible", visible)
+            for loc in visible:
+                ls = self.get_last_seen(loc)
+                item = getitem(self[loc], -1, Item("empty"))
+
+                itype='bug'
+                if ls.kind==itype and item.kind!=itype:
+                    log("moved party FROM loc", loc)
+                if ls.kind!=itype and item.kind==itype:
+                    log("moved party TO loc", loc)
+                self.last_seen[loc.x][loc.y] = item
+        return visible
+
+    def display(self, beings=None):
         """Refresh screen."""
+        self.los_update(beings)
         self.scr.refresh()
 
     def blocked2(self, path):

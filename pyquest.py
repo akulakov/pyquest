@@ -61,82 +61,6 @@ commands = {
 # }}}
 
 
-def move(level_num):
-    """ Move all monsters.
-
-        Heal monsters, update status msg, auto-move them.
-    """
-
-    for being in level.monsters:
-        if being.alive:
-            being.heal()
-
-            # move using autopilot
-            if being.program:
-                times, direction = being.program
-                rval = being.move(direction)
-                if type(rval) == type(being):
-                    # live monster there..
-                    being.attack(rval)
-
-                # program may have been reset in being.move()
-                if being.program:
-                    times -= 1
-                    if not ok or ok in (2,3) or times < 1:
-                        # bumped into something or end of program
-                        being.program = None
-                    else:
-                        being.program = times, direction
-
-            else:
-
-                if conf.mode == "strategical":
-                    dist = field.distance(level.hero, being)
-                elif conf.mode == "tactical":
-                    dist_h = field.distance(level.hoplite, being)
-                    dist_f = field.distance(level.fencer, being)
-                    dist_m = field.distance(level.mage, being)
-                    dist = min(dist_h, dist_f, dist_m)
-
-                if dist < 9 and being.hostile:
-                    being.attack_hero_flag = True
-
-                    if conf.mode == "strategical":
-                        dist = field.distance(being, level.hero)
-                        if dist == 1:
-                            being.attack(level.hero)
-                        else:
-                            # moves closer to hero
-                            being.attack_hero()
-
-                    elif conf.mode == "tactical":
-                        if dist_h == dist:
-                            who = level.hoplite
-                            being.attack_hero(level.hoplite)
-                        elif dist_f == dist:
-                            who = level.fencer
-                            being.attack_hero(level.fencer)
-                        else:
-                            who = level.mage
-                        dist = field.distance(being, who)
-
-                        if dist == 1:
-                            being.attack(who)
-                        else:
-                            # moves closer to hero
-                            being.attack_hero(who)
-
-                else:
-                    being.random_move()
-
-    if not level.monsters:
-        if levels.current+1 >= conf.levels:
-            win = curses.newwin(2, 70, 21, 0)
-            win.addstr(0,0, "Victory is yours!")
-            win.addstr(1,0, "Press any key to end game..")
-            win.getch()
-            sys.exit()
-
 
 def health_bar():
     """ Print health status bar showing health of all 3 heroes, encoded in color,
@@ -184,6 +108,7 @@ def health_bar():
         field.scr.addstr(23, offset, s, col)
         offset += len(s) + 1
 
+
 class PyQuest:
     def __init__(self, scr):
         self.scr = scr
@@ -220,21 +145,7 @@ class PyQuest:
             Create hero's team; move them; create new levels when old ends.
         """
         level_num = 1
-        field.load_map("empty")
-        level.populate()
-
-        # make hero's party
-        level.hero = Being('party', field.random(), level.last_index)
-        level.last_index += 1
-        level.hero.place()
-        level.hoplite = Being("hoplite", Loc(1,1), level.last_index)
-        level.last_index += 1
-        level.fencer = Being("fencer", Loc(1,2), level.last_index)
-        level.last_index += 1
-        level.mage = Being("mage", Loc(1,3), level.last_index)
-        level.last_index += 1
-
-        field.full_display()
+        self.init_level()
 
         # game loop
         while True:
@@ -258,66 +169,21 @@ class PyQuest:
                     break
 
                 if cur_being.program:
-                    log("- - cur being (%s) has a program.." % cur_being.kind)
-                    times, direction = cur_being.program
-                    ok = cur_being.move(direction)
-                    # program may have been reseted in being.move()
-                    if cur_being.program:
-                        log("- - cur being STILL has a program..")
-                        times -= 1
-                        if (not ok) or (times < 1):
-                            # bumped into something or end of program
-                            cur_being.program = None
-                            log("- - resetting program because bumped into something?..")
-                        else:
-                            cur_being.program = times, direction
+                    cur_being.handle_program()
                 else:
-                    health_bar()
-                    # log("- - cur being (%s) has NO program..\n" % cur_being.kind)
-                    loc = cur_being.loc
-                    # log("kind: %s, x: %d y: %d;\n" % (cur_being.kind, x, y))
-                    field.display()
-                    field.scr.move(loc.y-1, loc.x-1)
-                    c = field.scr.getch()
-                    if c in keymap.keys():
-                        exec(commands[keymap[c]] + '()')
-                    elif 49 <= c <= 57:
-                        # e.g. '5l' moves 5 times to the left
-                        cur_being.move_program(c-48)
-                    move_res = cur_being.move(c)
-                    if type(move_res) == type(cur_being):
-                        # live monster
-                        monster = move_res
-                        # cur_being.attack(monster)
-                        if conf.mode == "strategical" and random.random() < ask_chance and not monster.asked:
-                            monster.ask(cur_being)
-                        else:
-                            cur_being.attack(monster)
+                    self.manual_move(cur_being)
 
                 # check if all party is near a wall in tactical mode:
                 if conf.mode == "tactical":
-                    all_near_wall = True
-                    party = [level.hoplite, level.fencer, level.mage]
-                    for hero in party:
-                        log("checking hero: %s" % (hero.kind))
-                        if not hero.next_to("wall"):
-                            log("hero: %s is NOT close to a wall." % (hero.kind))
-                            all_near_wall = False
-                            break
-                        else:
-                            log("hero: %s IS close to a wall." % (hero.kind))
-                        hero.advance()
+                    all_near_wall = self.tactical_wall_check()
                     if all_near_wall or conf.auto_combat:
                         break
                 field.msg()
 
 
             log("loop: all_near_wall: %s" % all_near_wall)
-            if ((not level.monsters or all_near_wall or conf.auto_combat) and
-                                    conf.mode == "tactical" and not test):
-                we_won = False
-                if not level.monsters or conf.auto_combat:
-                    we_won = True
+            if (not level.monsters or all_near_wall or conf.auto_combat) and conf.mode=="tactical" and not test:
+                we_won = not level.monsters or conf.auto_combat
                 cur = levels.current
                 field.fld, level.down, level.up = levels.list[cur]
                 conf.mode = "strategical"
@@ -333,13 +199,144 @@ class PyQuest:
                     dir = field.get_rev_dir(level.hero.location, attacker.location)
                     level.hero.move(dir)
                 conf.auto_combat = False
-                field.full_display()
+                field.full_display(level.party)
             else:
-                move(level_num)
+                self.move(level_num)
 
-            field.display()
+            field.full_display(level.hero)
             field.msg()
             #field.msgwin.getch()
+
+    def tactical_wall_check(self):
+        all_near_wall = True
+        party = [level.hoplite, level.fencer, level.mage]
+        for hero in party:
+            log("checking hero: %s" % (hero.kind))
+            if not hero.next_to("wall"):
+                log("hero: %s is NOT close to a wall." % (hero.kind))
+                all_near_wall = False
+                break
+            else:
+                log("hero: %s IS close to a wall." % (hero.kind))
+            hero.advance()
+        return all_near_wall
+
+    def manual_move(self, cur_being):
+        health_bar()
+        # log("- - cur being (%s) has NO program..\n" % cur_being.kind)
+        loc = cur_being.loc
+        # log("kind: %s, x: %d y: %d;\n" % (cur_being.kind, x, y))
+        field.display(cur_being)
+        field.scr.move(loc.y-1, loc.x-1)
+        c = field.scr.getch()
+        if c in keymap.keys():
+            exec(commands[keymap[c]] + '()')
+        elif 49 <= c <= 57:
+            # e.g. '5l' moves 5 times to the left
+            cur_being.move_program(c-48)
+        move_res = cur_being.move(c)
+        if type(move_res) == type(cur_being):
+            # live monster
+            monster = move_res
+            # cur_being.attack(monster)
+            if conf.mode == "strategical" and random.random() < ask_chance and not monster.asked:
+                monster.ask(cur_being)
+            else:
+                cur_being.attack(monster)
+
+    def init_level(self):
+        field.load_map("empty")
+        level.populate()
+
+        # make hero's party
+        level.hero = Being('party', field.random(), level.last_index)
+        level.last_index += 1
+        level.hero.place()
+        level.hoplite = Being("hoplite", Loc(1,1), level.last_index)
+        level.last_index += 1
+        level.fencer = Being("fencer", Loc(1,2), level.last_index)
+        level.last_index += 1
+        level.mage = Being("mage", Loc(1,3), level.last_index)
+        level.last_index += 1
+
+        field.full_display([level.hero])
+
+    def move(self, level_num):
+        """ Move all monsters.
+            Heal monsters, update status msg, auto-move them.
+        """
+
+        for being in level.monsters:
+            if being.alive:
+                being.heal()
+
+                # move using autopilot
+                if being.program:
+                    self.program_move(being)
+                else:
+                    dists = []
+                    if conf.mode == "strategical":
+                        dist = field.distance(level.hero, being)
+                    elif conf.mode == "tactical":
+                        dists = [field.distance(level.hoplite, being),
+                                 field.distance(level.fencer, being),
+                                 field.distance(level.mage, being)]
+                        dist = min(*dists)
+
+                    if dist < 9 and being.hostile:
+                        self.move_attack(being, dist, dists)
+                    else:
+                        being.random_move()
+
+        if not level.monsters and levels.current+1 >= conf.levels:
+            win = curses.newwin(2, 70, 21, 0)
+            win.addstr(0,0, "Victory is yours!")
+            win.addstr(1,0, "Press any key to end game..")
+            win.getch()
+            sys.exit()
+
+    def move_attack(self, being, dist, dists):
+        being.attack_hero_flag = True
+
+        if conf.mode == "strategical":
+            dist = field.distance(being, level.hero)
+            if dist == 1:
+                being.attack(level.hero)
+            else:
+                # moves closer to hero
+                being.attack_hero()
+
+        elif conf.mode == "tactical":
+            if dists[0] == dist:
+                who = level.hoplite
+                being.attack_hero(level.hoplite)
+            elif dists[1] == dist:
+                who = level.fencer
+                being.attack_hero(level.fencer)
+            else:
+                who = level.mage
+            dist = field.distance(being, who)
+
+            if dist == 1:
+                being.attack(who)
+            else:
+                # moves closer to hero
+                being.attack_hero(who)
+
+    def program_move(self, being):
+        rval = being.move(direction)
+        if type(rval) == type(being):
+            # live monster there..
+            being.attack(rval)
+
+        # program may have been reset in being.move()
+        if being.program:
+            times -= 1
+            if not ok or ok in (2,3) or times < 1:
+                # bumped into something or end of program
+                being.program = None
+            else:
+                being.program = times, direction
 
 
 # pyq = PyQuest()
